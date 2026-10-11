@@ -1,3 +1,65 @@
-# Diploma back
+# Generator Dispatch — API
 
-## The description will be later
+Серверная часть системы доставки мобильных генераторов на подстанции. Предоставляет API для подстанций, баз, автомобилей и маршрутов, обращается к сервисам геокодирования и маршрутизации Яндекса и передаёт обновления клиентам через Socket.IO. В проекте также есть демонстрационная имитация движения автомобиля.
+
+**Стек:** Node.js, TypeScript, Express, PostgreSQL, Socket.IO, Yandex Routing API и Геокодер.
+
+## Требования
+
+- Node.js 22.x, npm 10.x и Git.
+- PostgreSQL с подготовленной схемой и данными проекта. Версия PostgreSQL в репозитории не зафиксирована.
+- Подключение к PostgreSQL с TLS: в `src/db.ts` установлено `ssl: true`.
+- Собственные ключи сервисов Яндекса для маршрутов / матрицы расстояний и геокодирования.
+
+**Подготовка базы:** в репозитории нет миграций и SQL для создания таблиц. Файлы `src/sql/*.table.sql` содержат только часть начальных данных; сами по себе они не создают базу. Код ожидает таблицы `substations`, `bases`, `cars`, `cars_routes`, `repairing_substations` и `distance_matrix`. Для полноценного запуска с нуля нужно отдельно восстановить схему и наполнить её данными.
+
+## Локальный запуск
+
+Следующие шаги рассчитаны на уже подготовленную базу.
+
+1. Клонируйте репозиторий и установите зависимости:
+
+   ```bash
+   git clone https://github.com/frendip/generator-dispatch-api.git
+   cd generator-dispatch-api
+   npm ci
+   ```
+
+2. Создайте в корне файл `.env` и укажите свои значения:
+
+   ```dotenv
+   PORT=4000
+   DB_HOST=localhost
+   DB_NAME=generator_dispatch
+   DB_USER=postgres
+   DB_PASS=YOUR_POSTGRES_PASSWORD
+   ROUTER_API_KEY=YOUR_YANDEX_ROUTING_API_KEY
+   GEOCODE_API_KEY=YOUR_YANDEX_GEOCODER_API_KEY
+   ```
+
+   По умолчанию PostgreSQL использует порт `5432`; при необходимости задайте `PGPORT`. Файл `.env` исключён из Git. Серверные ключи не нужно передавать во frontend.
+
+3. Запустите сервер:
+
+   ```bash
+   npm run dev
+   ```
+
+API будет доступен на `http://localhost:4000`, Socket.IO использует тот же порт. Корневой путь `/` не содержит страницы и возвращает 404; маршруты приложения начинаются с `/cars`, `/substations`, `/router` и `/geocode`.
+
+Инициализация данных автоматически не запускается. Функции `setDbData` и `fillDistanceMatrix` очищают существующие таблицы и предназначены для подготовки демонстрационных данных.
+
+## Проверка TypeScript
+
+```bash
+npx tsc --noEmit
+```
+
+Отдельные команды `npm run build` и `npm start` в проекте не настроены. Сервер разработки использует nodemon и ts-node.
+
+## Связанные репозитории
+
+- [generator-dispatch-web](https://github.com/frendip/generator-dispatch-web) — интерфейс диспетчера.
+- [generator-dispatch-driver](https://github.com/frendip/generator-dispatch-driver) — приложение водителя.
+
+Установка, проверка TypeScript и запуск HTTP-сервера проверены на Node.js 22.22.3 и npm 10.9.8. Запросы к PostgreSQL и сервисам Яндекса без настроенной базы и ключей не проверялись.
